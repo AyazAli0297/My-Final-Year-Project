@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/layout/Footer";
@@ -141,7 +140,7 @@ export default function Home() {
               </div>
               <div className="bg-card p-6 rounded-lg shadow-sm">
                 <div className="flex items-center gap-3 mb-4">
-                  <User className="h-8 w-8 text-primary" />
+                  <Users className="h-8 w-8 text-primary" />
                   <h3 className="text-xl font-bold">For Doctors</h3>
                 </div>
                 <ul className="space-y-3">
