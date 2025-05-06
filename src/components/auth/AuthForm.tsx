@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -25,7 +24,13 @@ type AuthFormProps = {
 
 // Schema for login form
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string()
+    .email("Please enter a valid email address")
+    .refine((email) => {
+      // Basic email format validation
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      return emailRegex.test(email);
+    }, "Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
@@ -59,18 +64,31 @@ export function AuthForm({ type }: AuthFormProps) {
 
   async function onSubmit(values: FormValues) {
     setIsLoading(true);
+    toast.loading(type === "login" ? "Logging in..." : "Creating account...");
     
     try {
       if (type === "login") {
+        console.log('Attempting login with email:', values.email);
+        
         // Login with Supabase
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: values.email,
+          email: values.email.toLowerCase().trim(),
           password: values.password,
         });
         
         if (error) {
+          console.error('Login error:', error);
+          if (error.message.includes('Invalid login credentials')) {
+            throw new Error('Invalid email or password');
+          }
+          if (error.message.includes('Email not confirmed')) {
+            throw new Error('Please confirm your email before logging in');
+          }
           throw error;
         }
+        
+        console.log('Login successful, fetching user profile...');
+        toast.loading("Fetching your profile...");
         
         // Check user role in database to determine redirect path
         const { data: userData, error: userError } = await supabase
@@ -80,9 +98,12 @@ export function AuthForm({ type }: AuthFormProps) {
           .single();
         
         if (userError) {
-          throw userError;
+          console.error('Error fetching user profile:', userError);
+          throw new Error('Error fetching user profile. Please try again.');
         }
         
+        console.log('User profile fetched successfully:', userData);
+        toast.dismiss();
         toast.success("Logged in successfully!");
         
         // Redirect based on user role
@@ -92,17 +113,34 @@ export function AuthForm({ type }: AuthFormProps) {
           navigate("/dashboard");
         }
       } else {
+        console.log('Attempting signup with email:', values.email);
+        
         // Signup with Supabase
         const { data, error } = await supabase.auth.signUp({
-          email: values.email,
+          email: values.email.toLowerCase().trim(),
           password: values.password,
+          options: {
+            data: {
+              name: values.name,
+              role: values.role
+            }
+          }
         });
         
         if (error) {
+          console.error('Signup error:', error);
+          if (error.message.includes('User already registered')) {
+            throw new Error('An account with this email already exists');
+          }
+          if (error.message.includes('For security purposes')) {
+            throw new Error('Please wait a moment before trying again');
+          }
           throw error;
         }
         
         if (data.user) {
+          console.log('User created, creating profile...');
+          
           // Create a profile record for the user with name and role
           const { error: profileError } = await supabase
             .from('profiles')
@@ -112,25 +150,46 @@ export function AuthForm({ type }: AuthFormProps) {
                 name: values.name,
                 role: values.role,
                 email: values.email,
-                created_at: new Date()
+                created_at: new Date().toISOString()
               }
             ]);
           
           if (profileError) {
-            throw profileError;
+            console.error('Error creating user profile:', profileError);
+            // If profile creation fails, we should still allow the user to proceed
+            // as they can complete their profile later
+            console.warn('Profile creation failed, but user was created');
           }
           
           toast.success("Account created successfully!");
           
-          // Redirect to appropriate dashboard based on role
-          if (values.role === "doctor") {
-            navigate("/doctor/dashboard");
+          // Automatically sign in the user after successful signup
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: values.email.toLowerCase().trim(),
+            password: values.password,
+          });
+
+          if (signInError) {
+            console.error('Auto sign-in error:', signInError);
+            navigate("/login");
           } else {
-            navigate("/dashboard");
+            // Redirect based on role
+            if (values.role === "doctor") {
+              navigate("/doctor/dashboard");
+            } else {
+              navigate("/dashboard");
+            }
           }
         }
       }
     } catch (error: any) {
+      console.error('Authentication error details:', {
+        message: error.message,
+        status: error.status,
+        name: error.name,
+        stack: error.stack
+      });
+      toast.dismiss();
       toast.error(error.message || "Authentication failed. Please try again.");
     } finally {
       setIsLoading(false);
@@ -255,7 +314,14 @@ export function AuthForm({ type }: AuthFormProps) {
               className="w-full mt-6" 
               disabled={isLoading}
             >
-              {isLoading ? "Processing..." : (type === "login" ? "Sign in" : "Create account")}
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  {type === "login" ? "Logging in..." : "Creating account..."}
+                </div>
+              ) : (
+                type === "login" ? "Sign in" : "Create account"
+              )}
             </Button>
           </form>
         </Form>

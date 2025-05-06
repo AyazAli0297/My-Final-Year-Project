@@ -1,15 +1,23 @@
-
 import { createClient } from '@supabase/supabase-js';
 
-// Replace these with your actual Supabase URL and anon key from your Supabase dashboard
-// You can find these in your Supabase dashboard under Settings > API
-const supabaseUrl = 'https://your-project-id.supabase.co';
-const supabaseAnonKey = 'your-actual-supabase-anon-key';
+// Get Supabase credentials from environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Validate that the credentials are not the placeholders
-if (supabaseUrl === 'https://your-project-id.supabase.co' || 
-    supabaseAnonKey === 'your-actual-supabase-anon-key') {
-  console.error('Please replace the placeholder Supabase credentials with your actual credentials.');
+// Debug logging
+console.log('Supabase URL:', supabaseUrl);
+console.log('Supabase Key exists:', !!supabaseAnonKey);
+
+// Validate that the credentials are present
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing Supabase credentials. Please check your environment variables.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce'
+  }
+});
