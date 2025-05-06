@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
+import { AuthProvider } from "@/context/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 // Pages
 import Home from "./pages/Home";
@@ -22,28 +24,36 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="light">
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
         <BrowserRouter>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            
-            {/* Patient Routes */}
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/upload" element={<Upload />} />
-            
-            {/* Doctor Routes */}
-            <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
-            
-            {/* Admin Routes */}
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            
-            {/* Catch-all */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AuthProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              
+              {/* Patient Protected Routes */}
+              <Route element={<ProtectedRoute requiredRole="patient" />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/upload" element={<Upload />} />
+              </Route>
+              
+              {/* Doctor Protected Routes */}
+              <Route element={<ProtectedRoute requiredRole="doctor" />}>
+                <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+              </Route>
+              
+              {/* Admin Protected Routes */}
+              <Route element={<ProtectedRoute requiredRole="admin" />}>
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              </Route>
+              
+              {/* Catch-all */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>

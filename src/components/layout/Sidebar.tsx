@@ -9,9 +9,11 @@ import {
   Upload, 
   Settings,
   LayoutDashboard,
-  User
+  User,
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
 
 type SidebarProps = {
   userRole: 'patient' | 'doctor' | 'admin';
@@ -19,6 +21,7 @@ type SidebarProps = {
 
 export function Sidebar({ userRole }: SidebarProps) {
   const location = useLocation();
+  const { profile, signOut } = useAuth();
   
   // Define navigation items based on user role
   const getNavItems = () => {
@@ -81,14 +84,25 @@ export function Sidebar({ userRole }: SidebarProps) {
         </nav>
       </div>
       <div className="border-t p-4">
-        <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-          <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center">
-            <User className="h-4 w-4" />
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-3 rounded-lg px-3 py-2">
+            <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center">
+              <User className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-xs font-medium">{profile?.name || 'User'}</p>
+              <p className="text-xs text-muted-foreground capitalize">{profile?.role || userRole}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-medium">{userRole === 'patient' ? 'John Doe' : userRole === 'doctor' ? 'Dr. Jane Smith' : 'Admin User'}</p>
-            <p className="text-xs text-muted-foreground capitalize">{userRole}</p>
-          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full flex items-center gap-2"
+            onClick={signOut}
+          >
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </Button>
         </div>
       </div>
     </aside>

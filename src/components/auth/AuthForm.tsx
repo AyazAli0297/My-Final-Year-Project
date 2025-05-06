@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/lib/supabase";
 
 type AuthFormProps = {
   type: "login" | "signup";
@@ -41,6 +42,7 @@ type FormValues = LoginFormValues & Partial<Omit<SignupFormValues, keyof LoginFo
 
 export function AuthForm({ type }: AuthFormProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   
   const schema = type === "login" ? loginSchema : signupSchema;
@@ -55,24 +57,83 @@ export function AuthForm({ type }: AuthFormProps) {
     },
   });
 
-  function onSubmit(values: FormValues) {
-    // This would normally call an API endpoint for authentication
-    console.log(values);
-    toast.success(
-      type === "login" ? "Logged in successfully!" : "Account created successfully!"
-    );
+  async function onSubmit(values: FormValues) {
+    setIsLoading(true);
     
-    // Redirect to appropriate dashboard based on role
-    if (type === "login") {
-      // For demo, we'll just redirect to patient dashboard
-      navigate("/dashboard");
-    } else {
-      const role = values.role;
-      if (role === "doctor") {
-        navigate("/doctor/dashboard");
+    try {
+      if (type === "login") {
+        // Login with Supabase
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: values.email,
+          password: values.password,
+        });
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Check user role in database to determine redirect path
+        const { data: userData, error: userError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+        
+        if (userError) {
+          throw userError;
+        }
+        
+        toast.success("Logged in successfully!");
+        
+        // Redirect based on user role
+        if (userData.role === "doctor") {
+          navigate("/doctor/dashboard");
+        } else {
+          navigate("/dashboard");
+        }
       } else {
-        navigate("/dashboard");
+        // Signup with Supabase
+        const { data, error } = await supabase.auth.signUp({
+          email: values.email,
+          password: values.password,
+        });
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data.user) {
+          // Create a profile record for the user with name and role
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: data.user.id,
+                name: values.name,
+                role: values.role,
+                email: values.email,
+                created_at: new Date()
+              }
+            ]);
+          
+          if (profileError) {
+            throw profileError;
+          }
+          
+          toast.success("Account created successfully!");
+          
+          // Redirect to appropriate dashboard based on role
+          if (values.role === "doctor") {
+            navigate("/doctor/dashboard");
+          } else {
+            navigate("/dashboard");
+          }
+        }
       }
+    } catch (error: any) {
+      toast.error(error.message || "Authentication failed. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -189,8 +250,12 @@ export function AuthForm({ type }: AuthFormProps) {
               />
             )}
             
-            <Button type="submit" className="w-full mt-6">
-              {type === "login" ? "Sign in" : "Create account"}
+            <Button 
+              type="submit" 
+              className="w-full mt-6" 
+              disabled={isLoading}
+            >
+              {isLoading ? "Processing..." : (type === "login" ? "Sign in" : "Create account")}
             </Button>
           </form>
         </Form>
