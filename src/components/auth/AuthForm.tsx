@@ -34,6 +34,11 @@ const signupSchema = loginSchema.extend({
   role: z.enum(["patient", "doctor"]),
 });
 
+// Create a type that combines both schema types
+type LoginFormValues = z.infer<typeof loginSchema>;
+type SignupFormValues = z.infer<typeof signupSchema>;
+type FormValues = LoginFormValues & Partial<Omit<SignupFormValues, keyof LoginFormValues>>;
+
 export function AuthForm({ type }: AuthFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
@@ -41,7 +46,7 @@ export function AuthForm({ type }: AuthFormProps) {
   const schema = type === "login" ? loginSchema : signupSchema;
   
   // Define the form using the appropriate schema
-  const form = useForm<z.infer<typeof schema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       email: "",
@@ -50,7 +55,7 @@ export function AuthForm({ type }: AuthFormProps) {
     },
   });
 
-  function onSubmit(values: z.infer<typeof schema>) {
+  function onSubmit(values: FormValues) {
     // This would normally call an API endpoint for authentication
     console.log(values);
     toast.success(
@@ -62,7 +67,7 @@ export function AuthForm({ type }: AuthFormProps) {
       // For demo, we'll just redirect to patient dashboard
       navigate("/dashboard");
     } else {
-      const role = (values as z.infer<typeof signupSchema>).role;
+      const role = values.role;
       if (role === "doctor") {
         navigate("/doctor/dashboard");
       } else {
