@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
@@ -90,7 +89,7 @@ export function Sidebar({ userRole }: SidebarProps) {
               <User className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-xs font-medium">{profile?.name || 'User'}</p>
+              <p className="text-xs font-bold">{profile?.name || 'User'}</p>
               <p className="text-xs text-muted-foreground capitalize">{profile?.role || userRole}</p>
             </div>
           </div>

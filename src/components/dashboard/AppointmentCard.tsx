@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Calendar, Clock, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 type AppointmentCardProps = {
   id: string;
@@ -18,6 +18,8 @@ type AppointmentCardProps = {
   time: string;
   status: "upcoming" | "completed" | "canceled";
   userRole: "patient" | "doctor";
+  onCancel?: (id: string) => void;
+  onReschedule?: (id: string) => void;
 };
 
 export function AppointmentCard({
@@ -28,6 +30,8 @@ export function AppointmentCard({
   time,
   status,
   userRole,
+  onCancel,
+  onReschedule,
 }: AppointmentCardProps) {
   const getStatusColor = () => {
     switch (status) {
@@ -39,6 +43,8 @@ export function AppointmentCard({
         return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
     }
   };
+
+  const navigate = useNavigate();
 
   return (
     <Card>
@@ -75,8 +81,22 @@ export function AppointmentCard({
       </CardContent>
       {status === "upcoming" && (
         <CardFooter className="flex justify-between">
-          <Button variant="outline">Reschedule</Button>
-          <Button variant="destructive">Cancel</Button>
+          <Button
+            variant="outline"
+            onClick={() =>
+              onReschedule ? onReschedule(id) : navigate(`/doctor/appointments/${id}/reschedule`)
+            }
+          >
+            Reschedule
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() =>
+              onCancel ? onCancel(id) : navigate(`/doctor/appointments/${id}/cancel`)
+            }
+          >
+            Cancel
+          </Button>
         </CardFooter>
       )}
     </Card>

@@ -173,12 +173,8 @@ export function AuthForm({ type }: AuthFormProps) {
             console.error('Auto sign-in error:', signInError);
             navigate("/login");
           } else {
-            // Redirect based on role
-            if (values.role === "doctor") {
-              navigate("/doctor/dashboard");
-            } else {
-              navigate("/dashboard");
-            }
+            // Redirect to complete profile page after signup
+            navigate("/complete-profile");
           }
         }
       }

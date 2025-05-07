@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +16,19 @@ import Upload from "./pages/Upload";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
+import Patients from "./pages/Patients";
+import Appointments from "./pages/Appointments";
+import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
+import NewPatient from "./pages/NewPatient";
+import NewAppointment from "./pages/NewAppointment";
+import NewReport from "./pages/NewReport";
+import NewConsultation from "./pages/NewConsultation";
+import RescheduleAppointment from "./pages/RescheduleAppointment";
+import CancelAppointment from "./pages/CancelAppointment";
+import CompleteProfile from "./pages/CompleteProfile";
+import BookAppointment from "./pages/BookAppointment";
+import DoctorAppointments from "./pages/DoctorAppointments";
 
 const queryClient = new QueryClient();
 
@@ -33,16 +45,29 @@ const App = () => (
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/complete-profile" element={<CompleteProfile />} />
+              <Route path="/appointments/new" element={<BookAppointment />} />
               
               {/* Patient Protected Routes */}
               <Route element={<ProtectedRoute requiredRole="patient" />}>
                 <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/appointments" element={<Appointments />} />
                 <Route path="/upload" element={<Upload />} />
               </Route>
               
               {/* Doctor Protected Routes */}
               <Route element={<ProtectedRoute requiredRole="doctor" />}>
                 <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+                <Route path="/doctor/patients" element={<Patients />} />
+                <Route path="/doctor/patients/new" element={<NewPatient />} />
+                <Route path="/doctor/appointments" element={<DoctorAppointments />} />
+                <Route path="/doctor/appointments/new" element={<NewAppointment />} />
+                <Route path="/doctor/appointments/:id/reschedule" element={<RescheduleAppointment />} />
+                <Route path="/doctor/appointments/:id/cancel" element={<CancelAppointment />} />
+                <Route path="/doctor/reports" element={<Reports />} />
+                <Route path="/doctor/reports/new" element={<NewReport />} />
+                <Route path="/doctor/consultations" element={<NewConsultation />} />
+                <Route path="/settings" element={<Settings />} />
               </Route>
               
               {/* Admin Protected Routes */}

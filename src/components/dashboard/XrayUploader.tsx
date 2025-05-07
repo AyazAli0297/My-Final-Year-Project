@@ -1,10 +1,10 @@
-
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, X, FileImage } from "lucide-react";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/lib/supabase";
 
 export function XrayUploader() {
   const [isDragging, setIsDragging] = useState(false);
@@ -12,6 +12,7 @@ export function XrayUploader() {
   const [preview, setPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -43,6 +44,12 @@ export function XrayUploader() {
       toast.error('Please upload an image file');
       return;
     }
+
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size should be less than 10MB');
+      return;
+    }
     
     setFile(file);
     
@@ -59,25 +66,39 @@ export function XrayUploader() {
     setPreview(null);
   };
 
-  const uploadFile = () => {
+  const uploadFile = async () => {
     if (!file) return;
     
-    setIsUploading(true);
-    setUploadProgress(0);
-    
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsUploading(false);
-          toast.success('X-ray uploaded successfully!');
-          // In a real app, we would handle redirect or next steps here
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 300);
+    try {
+      setIsUploading(true);
+      setUploadProgress(0);
+
+      // Generate a unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+      const filePath = `xrays/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('xrays')
+        .upload(filePath, file);
+
+      if (error) {
+        throw error;
+      }
+
+      setUploadProgress(100);
+      toast.success('X-ray uploaded successfully!');
+      
+      // Clear the file after successful upload
+      clearFile();
+      
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast.error('Failed to upload X-ray. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -85,7 +106,7 @@ export function XrayUploader() {
       <CardHeader>
         <CardTitle>Upload X-ray Image</CardTitle>
         <CardDescription>
-          Upload your X-ray image for AI-powered analysis and report generation
+          Upload your X-ray image for analysis
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -105,24 +126,27 @@ export function XrayUploader() {
               <div className="space-y-2">
                 <h3 className="font-medium">Drag and drop your X-ray image</h3>
                 <p className="text-sm text-muted-foreground">
-                  Supports: JPG, PNG, DICOM
+                  Supports: JPG, PNG (Max size: 10MB)
                 </p>
               </div>
               <span className="text-sm text-muted-foreground">or</span>
               <div>
-                <label htmlFor="file-upload" className="cursor-pointer">
-                  <Button variant="outline" type="button">
-                    <FileImage className="mr-2 h-4 w-4" />
-                    Browse files
-                  </Button>
-                  <input
-                    id="file-upload"
-                    type="file"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handleFileInput}
-                  />
-                </label>
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <FileImage className="mr-2 h-4 w-4" />
+                  Browse files
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  id="file-upload"
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleFileInput}
+                />
               </div>
             </div>
           </div>
@@ -167,14 +191,8 @@ export function XrayUploader() {
             disabled={!file || isUploading}
             onClick={uploadFile}
           >
-            {isUploading ? "Uploading..." : "Upload & Generate Report"}
+            {isUploading ? "Uploading..." : "Upload X-ray"}
           </Button>
-          <p className="text-xs text-muted-foreground text-center">
-            By uploading, you agree to our{" "}
-            <a href="/terms" className="text-primary hover:underline">
-              Terms of Service
-            </a>
-          </p>
         </div>
       </CardFooter>
     </Card>
