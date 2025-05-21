@@ -33,6 +33,7 @@ import DoctorAppointments from "./pages/DoctorAppointments";
 import DoctorSchedule from "./pages/DoctorSchedule";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import Features from "./pages/Features";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,7 @@ const App = () => (
               <Route path="/complete-profile" element={<CompleteProfile />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/features" element={<Features />} />
               
               {/* Patient Protected Routes */}
               <Route element={<ProtectedRoute requiredRole="patient" />}>
