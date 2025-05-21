@@ -31,6 +31,8 @@ import CompleteProfile from "./pages/CompleteProfile";
 import BookAppointment from "./pages/BookAppointment";
 import DoctorAppointments from "./pages/DoctorAppointments";
 import DoctorSchedule from "./pages/DoctorSchedule";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +51,8 @@ const App = () => (
               <Route path="/signup" element={<Signup />} />
               <Route path="/signup/confirm" element={<SignupConfirm />} />
               <Route path="/complete-profile" element={<CompleteProfile />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
               
               {/* Patient Protected Routes */}
               <Route element={<ProtectedRoute requiredRole="patient" />}>
