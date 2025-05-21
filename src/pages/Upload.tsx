@@ -1,11 +1,9 @@
-
-import { DashboardShell } from "@/components/layout/DashboardShell";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { XrayUploader } from "@/components/dashboard/XrayUploader";
 
 export default function Upload() {
   return (
-    <DashboardShell userRole="patient">
+    <>
       <div className="space-y-8">
         <DashboardHeader
           heading="Upload X-ray"
@@ -61,6 +59,6 @@ export default function Upload() {
           </div>
         </div>
       </div>
-    </DashboardShell>
+    </>
   );
 }

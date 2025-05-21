@@ -11,6 +11,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import SignupConfirm from "./pages/SignupConfirm";
 import Dashboard from "./pages/Dashboard";
 import Upload from "./pages/Upload";
 import DoctorDashboard from "./pages/DoctorDashboard";
@@ -29,6 +30,7 @@ import CancelAppointment from "./pages/CancelAppointment";
 import CompleteProfile from "./pages/CompleteProfile";
 import BookAppointment from "./pages/BookAppointment";
 import DoctorAppointments from "./pages/DoctorAppointments";
+import DoctorSchedule from "./pages/DoctorSchedule";
 
 const queryClient = new QueryClient();
 
@@ -45,14 +47,16 @@ const App = () => (
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/signup/confirm" element={<SignupConfirm />} />
               <Route path="/complete-profile" element={<CompleteProfile />} />
-              <Route path="/appointments/new" element={<BookAppointment />} />
               
               {/* Patient Protected Routes */}
               <Route element={<ProtectedRoute requiredRole="patient" />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/appointments" element={<Appointments />} />
+                <Route path="/appointments/new" element={<BookAppointment />} />
                 <Route path="/upload" element={<Upload />} />
+                <Route path="/reports" element={<Reports />} />
               </Route>
               
               {/* Doctor Protected Routes */}
@@ -68,6 +72,7 @@ const App = () => (
                 <Route path="/doctor/reports/new" element={<NewReport />} />
                 <Route path="/doctor/consultations" element={<NewConsultation />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/doctor/appointments/schedule" element={<DoctorSchedule />} />
               </Route>
               
               {/* Admin Protected Routes */}

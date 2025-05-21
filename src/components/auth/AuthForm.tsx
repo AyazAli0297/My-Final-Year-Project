@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 
 type AuthFormProps = {
   type: "login" | "signup";
@@ -31,10 +33,15 @@ const loginSchema = z.object({
       const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
       return emailRegex.test(email);
     }, "Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
 });
 
-// Extended schema for signup form with additional fields
+// Extended schema for signup form with only basic fields
 const signupSchema = loginSchema.extend({
   name: z.string().min(2, "Name must be at least 2 characters"),
   role: z.enum(["patient", "doctor"]),
@@ -123,7 +130,8 @@ export function AuthForm({ type }: AuthFormProps) {
             data: {
               name: values.name,
               role: values.role
-            }
+            },
+            emailRedirectTo: `${window.location.origin}/complete-profile`
           }
         });
         
@@ -156,26 +164,18 @@ export function AuthForm({ type }: AuthFormProps) {
           
           if (profileError) {
             console.error('Error creating user profile:', profileError);
-            // If profile creation fails, we should still allow the user to proceed
-            // as they can complete their profile later
             console.warn('Profile creation failed, but user was created');
           }
           
-          toast.success("Account created successfully!");
-          
-          // Automatically sign in the user after successful signup
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email: values.email.toLowerCase().trim(),
-            password: values.password,
+          toast.dismiss();
+          toast.success("Account created! Please check your email to confirm your account.");
+          // Redirect to confirmation page
+          navigate("/signup/confirm", { 
+            state: { 
+              email: values.email,
+              name: values.name
+            }
           });
-
-          if (signInError) {
-            console.error('Auto sign-in error:', signInError);
-            navigate("/login");
-          } else {
-            // Redirect to complete profile page after signup
-            navigate("/complete-profile");
-          }
         }
       }
     } catch (error: any) {
@@ -200,11 +200,11 @@ export function AuthForm({ type }: AuthFormProps) {
         </CardTitle>
         <CardDescription>
           {type === "login" 
-            ? "Enter your credentials to access your account" 
+            ? "Sign in to your account to continue using X-Ray AI"
             : "Enter your information to create an account"}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {type === "signup" && (
@@ -222,7 +222,6 @@ export function AuthForm({ type }: AuthFormProps) {
                 )}
               />
             )}
-            
             <FormField
               control={form.control}
               name="email"
@@ -231,15 +230,14 @@ export function AuthForm({ type }: AuthFormProps) {
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Input placeholder="name@example.com" {...field} />
-                      <Mail className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input type="email" placeholder="name@example.com" {...field} />
+                      <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
             <FormField
               control={form.control}
               name="password"
@@ -250,30 +248,23 @@ export function AuthForm({ type }: AuthFormProps) {
                     <div className="relative">
                       <Input
                         type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
+                        placeholder="Enter your password"
                         {...field}
                       />
-                      <Button
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-1 top-1 h-8 w-8"
-                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground focus:outline-none"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        tabIndex={-1}
                       >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                        <span className="sr-only">Toggle password visibility</span>
-                      </Button>
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
             {type === "signup" && (
               <FormField
                 control={form.control}
@@ -281,57 +272,43 @@ export function AuthForm({ type }: AuthFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>I am a</FormLabel>
-                    <div className="flex gap-4">
-                      <Button
-                        type="button"
-                        variant={field.value === "patient" ? "default" : "outline"}
-                        className="flex-1"
-                        onClick={() => form.setValue("role", "patient")}
+                    <FormControl>
+                      <ToggleGroup
+                        type="single"
+                        value={field.value}
+                        onValueChange={val => field.onChange(val || "patient")}
+                        className="w-full"
                       >
-                        Patient
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={field.value === "doctor" ? "default" : "outline"}
-                        className="flex-1"
-                        onClick={() => form.setValue("role", "doctor")}
-                      >
-                        Doctor
-                      </Button>
-                    </div>
+                        <ToggleGroupItem value="patient" className="w-1/2">Patient</ToggleGroupItem>
+                        <ToggleGroupItem value="doctor" className="w-1/2">Doctor</ToggleGroupItem>
+                      </ToggleGroup>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             )}
-            
-            <Button 
-              type="submit" 
-              className="w-full mt-6" 
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  {type === "login" ? "Logging in..." : "Creating account..."}
+                  {type === "login" ? "Signing in..." : "Creating account..."}
                 </div>
-              ) : (
-                type === "login" ? "Sign in" : "Create account"
-              )}
+              ) : type === "login" ? "Sign in" : "Create account"}
             </Button>
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="flex justify-center border-t p-4">
-        <p className="text-sm text-muted-foreground">
-          {type === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
-          <Link
-            to={type === "login" ? "/signup" : "/login"}
-            className="font-medium text-primary hover:underline"
-          >
-            {type === "login" ? "Sign up" : "Sign in"}
-          </Link>
-        </p>
+      <CardFooter className="flex flex-col gap-2">
+        {type === "login" ? (
+          <span className="text-sm text-muted-foreground text-center">
+            Don&apos;t have an account? <Link to="/signup" className="text-primary hover:underline">Sign up</Link>
+          </span>
+        ) : (
+          <span className="text-sm text-muted-foreground text-center">
+            Already have an account? <Link to="/login" className="text-primary hover:underline">Sign in</Link>
+          </span>
+        )}
       </CardFooter>
     </Card>
   );

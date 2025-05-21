@@ -28,8 +28,8 @@ export function Sidebar({ userRole }: SidebarProps) {
       return [
         { name: 'Dashboard', href: '/dashboard', icon: Home },
         { name: 'Upload X-ray', href: '/upload', icon: Upload },
-        { name: 'My Reports', href: '/reports', icon: FileText },
         { name: 'Appointments', href: '/appointments', icon: Calendar },
+        { name: 'Reports', href: '/reports', icon: FileText },
         { name: 'Settings', href: '/settings', icon: Settings },
       ];
     } else if (userRole === 'doctor') {

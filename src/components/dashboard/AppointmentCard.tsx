@@ -16,7 +16,7 @@ type AppointmentCardProps = {
   patientName?: string;
   date: string;
   time: string;
-  status: "upcoming" | "completed" | "canceled";
+  status: "upcoming" | "completed" | "canceled" | "scheduled";
   userRole: "patient" | "doctor";
   onCancel?: (id: string) => void;
   onReschedule?: (id: string) => void;
@@ -36,6 +36,7 @@ export function AppointmentCard({
   const getStatusColor = () => {
     switch (status) {
       case "upcoming":
+      case "scheduled":
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
       case "completed":
         return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
@@ -59,7 +60,6 @@ export function AppointmentCard({
             {status.charAt(0).toUpperCase() + status.slice(1)}
           </span>
         </div>
-        <CardDescription>Appointment ID: {id}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid gap-2">
@@ -79,11 +79,12 @@ export function AppointmentCard({
           </div>
         </div>
       </CardContent>
-      {status === "upcoming" && (
+      {(status === "upcoming" || status === "scheduled") && userRole === "doctor" && (
         <CardFooter className="flex justify-between">
           <Button
             variant="outline"
             onClick={() =>
+              // Use onReschedule prop if provided, otherwise navigate
               onReschedule ? onReschedule(id) : navigate(`/doctor/appointments/${id}/reschedule`)
             }
           >
@@ -92,6 +93,7 @@ export function AppointmentCard({
           <Button
             variant="destructive"
             onClick={() =>
+              // Use onCancel prop if provided, otherwise navigate
               onCancel ? onCancel(id) : navigate(`/doctor/appointments/${id}/cancel`)
             }
           >

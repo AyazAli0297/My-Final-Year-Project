@@ -18,29 +18,17 @@ export default function Dashboard() {
   const [rescheduleId, setRescheduleId] = useState<string | null>(null);
   const [rescheduleForm, setRescheduleForm] = useState({ date: '', time: '' });
   const [rescheduling, setRescheduling] = useState(false);
+  const [patientData, setPatientData] = useState<{ id: string; gender: string | null; first_name: string; last_name: string } | null>(null);
+
+  // State for reports
+  const [reportsData, setReportsData] = useState<any[]>([]);
+  const [loadingReports, setLoadingReports] = useState(true);
 
   // Mock data for patient dashboard stats and reports (can be replaced later)
   const stats = [
-    { title: "Total Reports", value: 12, icon: FileText },
+    { title: "Total Reports", value: loadingReports ? '...' : reportsData.length, icon: FileText },
     { title: "Upcoming Appointments", value: appointments.filter(apt => new Date(apt.appointment_date) >= new Date() && apt.status === 'scheduled').length, icon: Calendar },
-    { title: "Pending Reports", value: 1, icon: Clock, trend: { value: 5, isPositive: false } },
-  ];
-
-  const reports = [
-    {
-      id: "REP-5678",
-      title: "Chest X-ray Analysis",
-      description: "Analysis of anterior-posterior chest X-ray showing normal heart size and clear lung fields.",
-      date: "April 30, 2025",
-      imageUrl: "https://images.unsplash.com/photo-1530497610245-94d3c16cda28?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1200&q=80",
-    },
-    {
-      id: "REP-5679",
-      title: "Left Hand X-ray",
-      description: "X-ray of left hand showing no fractures or dislocations. Normal bone density and alignment.",
-      date: "April 15, 2025",
-      imageUrl: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1200&q=80",
-    },
+    { title: "Pending Reports", value: loadingReports ? '...' : reportsData.filter(report => report.status === 'pending').length, icon: Clock }, // Trend value can be dynamic too if needed
   ];
 
   useEffect(() => {
@@ -89,7 +77,86 @@ export default function Dashboard() {
       }
     }
 
+    // Fetch reports
+    async function fetchReports() {
+      if (!user || !profile) return;
+      setLoadingReports(true);
+      console.log("Dashboard: Fetching reports for role:", profile.role);
+      try {
+        let reportQuery = supabase.from('reports').select('*').order('created_at', { ascending: false });
+
+        if (profile.role === 'patient') {
+           // First, get the patient_id from the patients table using user.id
+           console.log("Dashboard (Patient): Attempting to fetch patient ID...");
+           const { data: patientData, error: patientError } = await supabase
+             .from('patients')
+             .select('id, gender, first_name, last_name')
+             .eq('user_id', user.id)
+             .single();
+
+           if (patientError || !patientData) {
+             console.error("Dashboard (Patient): Error fetching patient ID for reports:", patientError);
+             setReportsData([]);
+             setLoadingReports(false);
+             return;
+           }
+
+           setPatientData(patientData);
+           const patientId = patientData.id;
+           console.log("Dashboard (Patient): Fetched patient ID:", patientId);
+           reportQuery = reportQuery.eq('patient_id', patientId);
+           console.log("Dashboard (Patient): Report query set for patient_id:", patientId);
+
+        } else if (profile.role === 'doctor') {
+           // First, get the doctor_id from the doctors table using user.id
+           console.log("Dashboard (Doctor): Attempting to fetch doctor ID...");
+           const { data: doctorData, error: doctorError } = await supabase
+             .from('doctors')
+             .select('id')
+             .eq('user_id', user.id)
+             .single();
+
+           if (doctorError || !doctorData) {
+             console.error("Dashboard (Doctor): Error fetching doctor ID for reports:", doctorError);
+             setReportsData([]);
+             setLoadingReports(false);
+             return;
+           }
+
+           const doctorId = doctorData.id;
+           console.log("Dashboard (Doctor): Fetched doctor ID:", doctorId);
+           reportQuery = reportQuery.eq('doctor_id', doctorId);
+           console.log("Dashboard (Doctor): Report query set for doctor_id:", doctorId);
+
+        } else {
+            // Handle other roles or no reports if role is neither patient nor doctor
+            console.log("Dashboard: User role is not patient or doctor.", profile.role);
+            setReportsData([]);
+            setLoadingReports(false);
+            return;
+         }
+
+        console.log("Dashboard: Executing report query...");
+        const { data, error } = await reportQuery;
+
+        if (error) {
+          console.error("Dashboard: Error fetching reports:", error);
+          setReportsData([]); // Ensure reportsData is empty on fetch error
+        } else {
+          console.log("Dashboard: Reports fetched successfully.", data);
+          setReportsData(data || []);
+        }
+      } catch (err) {
+        console.error("Dashboard: Unexpected error fetching reports:", err);
+        setReportsData([]); // Ensure reportsData is empty on unexpected error
+      } finally {
+        console.log("Dashboard: Report fetching finished. Loading set to false.");
+        setLoadingReports(false);
+      }
+    }
+
     fetchAppointments();
+    fetchReports(); // Call the new fetch reports function
   }, [user, profile]);
 
   const upcomingAppointments = appointments
@@ -170,7 +237,6 @@ export default function Dashboard() {
             title={stat.title}
             value={stat.title === "Upcoming Appointments" ? upcomingAppointments.length : stat.value}
             icon={stat.icon}
-            trend={stat.trend}
           />
         ))}
       </div>
@@ -218,21 +284,29 @@ export default function Dashboard() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">Recent Reports</h2>
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/upload">View all / Upload New</Link>
+            <Link to="/reports">View all</Link>
           </Button>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
-          {reports.map((report) => (
-            <ReportCard
-              key={report.id}
-              id={report.id}
-              title={report.title}
-              description={report.description}
-              date={report.date}
-              imageUrl={report.imageUrl}
-              userRole="patient"
-            />
-          ))}
+          {loadingReports ? (
+            <p>Loading reports...</p>
+          ) : reportsData.length > 0 ? (
+            reportsData.map((report) => (
+              <ReportCard
+                key={report.id}
+                id={report.id}
+                title={report.ai_analysis_result?.title || report.title || (profile?.role === 'patient' && patientData ? `${patientData.first_name} ${patientData.last_name}'s Report` : 'Report')}
+                description={report.ai_analysis_result?.caption || report.description}
+                date={report.created_at}
+                imageUrl={report.xray_image_url}
+                userRole={profile?.role || "patient"}
+                patientAge={null}
+                patientGender={profile?.role === 'patient' ? patientData?.gender : null}
+              />
+            ))
+          ) : (
+            <p>No recent reports found.</p>
+          )}
         </div>
       </div>
 
