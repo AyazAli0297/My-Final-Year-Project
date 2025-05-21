@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 
 export function Footer() {
@@ -21,9 +20,6 @@ export function Footer() {
           <h3 className="font-semibold mb-3">Platform</h3>
           <ul className="space-y-2 text-sm">
             <li><Link to="/features" className="text-muted-foreground hover:text-foreground transition-colors">Features</Link></li>
-            <li><Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</Link></li>
-            <li><Link to="/security" className="text-muted-foreground hover:text-foreground transition-colors">Security</Link></li>
-            <li><Link to="/for-clinics" className="text-muted-foreground hover:text-foreground transition-colors">For Clinics</Link></li>
           </ul>
         </div>
         
