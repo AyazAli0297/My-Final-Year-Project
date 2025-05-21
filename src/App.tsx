@@ -34,6 +34,12 @@ import DoctorSchedule from "./pages/DoctorSchedule";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Features from "./pages/Features";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Blog from "./pages/Blog";
+import CaseStudies from "./pages/CaseStudies";
+import Support from "./pages/Support";
+import Documentation from "./pages/Documentation";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +61,12 @@ const App = () => (
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/features" element={<Features />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/case-studies" element={<CaseStudies />} />
+              <Route path="/support" element={<Support />} />
+              <Route path="/documentation" element={<Documentation />} />
               
               {/* Patient Protected Routes */}
               <Route element={<ProtectedRoute requiredRole="patient" />}>
