@@ -15,6 +15,7 @@ import {
   getDay,
   startOfDay,
   endOfDay,
+  startOfToday
 } from 'date-fns';
 import { DashboardShell } from '../components/layout/DashboardShell';
 
@@ -220,6 +221,9 @@ export default function BookAppointment() {
     time_slot: form.time_slot,
   });
 
+  // Get today's date in YYYY-MM-DD format
+  const today = format(startOfToday(), 'yyyy-MM-dd');
+
   return (
     <div className="container py-8">
       <h1 className="text-3xl font-bold mb-8 text-center">Book an Appointment</h1>
@@ -282,7 +286,7 @@ export default function BookAppointment() {
             <h2 className="text-2xl font-bold mb-4">Book with Dr. {bookingDoctor.first_name} {bookingDoctor.last_name}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block mb-1 font-medium" htmlFor="date">Date</label>
+                <label className="block mb-1 font-medium" htmlFor="date">New Date</label>
                 <Input
                   id="date"
                   name="date"
@@ -290,6 +294,7 @@ export default function BookAppointment() {
                   value={form.date}
                   onChange={handleFormChange}
                   required
+                  min={today}
                 />
               </div>
 

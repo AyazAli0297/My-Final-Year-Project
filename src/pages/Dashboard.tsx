@@ -104,7 +104,7 @@ export default function Dashboard() {
            setPatientData(patientData);
            const patientId = patientData.id;
            console.log("Dashboard (Patient): Fetched patient ID:", patientId);
-           reportQuery = reportQuery.eq('patient_id', patientId);
+           reportQuery = reportQuery.eq('patient_id', patientId).limit(5); // Limit to 5 recent reports
            console.log("Dashboard (Patient): Report query set for patient_id:", patientId);
 
         } else if (profile.role === 'doctor') {
@@ -284,14 +284,14 @@ export default function Dashboard() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">Recent Reports</h2>
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/reports">View all</Link>
+            <Link to="/reports">View all reports</Link>
           </Button>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          {loadingReports ? (
-            <p>Loading reports...</p>
-          ) : reportsData.length > 0 ? (
-            reportsData.map((report) => (
+        {loadingReports ? (
+          <div className="text-center">Loading reports...</div>
+        ) : reportsData.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {reportsData.map((report) => (
               <ReportCard
                 key={report.id}
                 id={report.id}
@@ -303,11 +303,11 @@ export default function Dashboard() {
                 patientAge={null}
                 patientGender={profile?.role === 'patient' ? patientData?.gender : null}
               />
-            ))
-          ) : (
-            <p>No recent reports found.</p>
-          )}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <p>No recent reports found.</p>
+        )}
       </div>
 
       {/* Reschedule Modal */}
